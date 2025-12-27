@@ -57,14 +57,20 @@ task executeBuild(type: Exec) {
     commandLine 'make', 'images', 'test-image'
 }
 
-task buildAndRunGtest(type: Exec) {
+task runGtest {
     dependsOn executeBuild
-    workingDir "$buildRoot"
-    commandLine 'make', 'run-test', 'TEST="gtest:all"'
+    doLast {
+        if (project.gtest != "") {
+            exec {
+                workingDir "$buildRoot"
+                commandLine 'make', 'run-test', 'TEST="gtest:all"'
+            }
+        }
+    }
 }
 
 task copyImage(type: Copy) {
-    dependsOn buildAndRunGtest
+    dependsOn executeBuild
 
     from "${executeBuild.workingDir}/build/${project.jdkImageName}/images"
     into "$buildRoot/build"
@@ -93,6 +99,7 @@ task packageDebugSymbols(type: Zip) {
 
 task packageBuildResults(type: Zip) {
     dependsOn packageDebugSymbols
+    dependsOn runGtest
     archiveName  = "unsigned-jdk-image.zip"
 
     from("${copyImage.destinationDir}/jdk") {
