@@ -340,7 +340,16 @@ abstract class XDecoratedPeer extends XWindowPeer {
             || ev.get_atom() == XWM.XA_NET_FRAME_EXTENTS.getAtom())
         {
             if (XWM.getWMID() != XWM.UNITY_COMPIZ_WM) {
-                getWMSetInsets(XAtom.get(ev.get_atom()));
+                if (XWM.getWMID() == XWM.MUTTER_WM && !isTargetUndecorated() && isVisible()) {
+                    // Mutter with mutter-x11-frames needs inset correction (JDK-8305825)
+                    wm_set_insets = null;
+                    Insets in = getWMSetInsets(XAtom.get(ev.get_atom()));
+                    if (in != null && !in.equals(dimensions.getInsets())) {
+                        handleCorrectInsets(in);
+                    }
+                } else {
+                    getWMSetInsets(XAtom.get(ev.get_atom()));
+                }
             } else {
                 if (!isReparented()) {
                     return;
